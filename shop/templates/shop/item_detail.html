@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <title>Купить {{ item.name }}</title>
+    <style>
+        body {
+            background-color: #f8f9fa; /* Светлый фон */
+            margin: 20px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .item-details {
+            background-color: white; /* Белый фон для блока с деталями товара */
+            border: 1px solid #dee2e6; /* Рамка */
+            border-radius: 0.5rem; /* Закругленные углы */
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Легкая тень */
+        }
+        .price {
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div>
+            <h1>{{ item.name }}</h1>
+            <div class="item-details">
+                <p>{{ item.description }}</p>
+                <p class="price" id="price-item">
+                    Цена: <span id="price-value">{{ price_item }}</span>
+                    <span class="currency" id="currency-symbol">{{ currency_symbol }}</span>
+                </p>
+
+                <!-- Форма для добавления в корзину -->
+                <input type="number" id="quantity-input-{{ item.id }}" value="1" min="1" required style="width: 60px;">
+                <button class="btn btn-success add-to-cart" data-id="{{ item.id }}">Добавить в корзину</button>
+
+                <!-- Блок для выбора валюты -->
+                <div class="d-flex align-items-center justify-content-between mt-3">
+                    <form method="POST" action="" class="ml-3 currency-form" id="currency-form">
+                        {% csrf_token %}
+                        <select name="currency" id="currency-select" class="form-control w-auto d-inline-block">
+                            <option value="USD" {% if currency == 'USD' %}selected{% endif %}>USD</option>
+                            <option value="EUR" {% if currency == 'EUR' %}selected{% endif %}>EUR</option>
+                            <option value="CNY" {% if currency == 'CNY' %}selected{% endif %}>CNY</option>
+                            <option value="RUB" {% if currency == 'RUB' %}selected{% endif %}>RUB</option>
+                            <option value="AED" {% if currency == 'AED' %}selected{% endif %}>AED</option>
+                            <option value="KZT" {% if currency == 'KZT' %}selected{% endif %}>KZT</option>
+                        </select>
+                        <span class="ml-2">- изменить валюту для оплаты</span>
+
+                        <input type="hidden" name="item_id" value="{{ item.id }}">
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center justify-content-between mt-3">
+            <form method="GET" action="{% url 'cart' %}" class="mr-2">
+                <a href="{% url 'item_list' %}" class="btn btn-secondary">Вернуться к покупкам</a>
+            </form>
+                <a href="{% url 'cart' %}" class="btn btn-primary btn-back">Перейти в корзину</a>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('.add-to-cart').on('click', function(e) {
+                e.preventDefault(); // Отменить стандартное поведение кнопки
+
+                let productId = $(this).data('id'); // Получаем ID товара
+                let quantity = $('#quantity-input-' + productId).val(); // Получаем количество
+
+                $.ajax({
+                    url: '/add_to_cart/' + productId + '/', // URL для добавления в корзину
+                    type: 'POST',
+                    data: {
+                        'quantity': quantity, // Отправляем количество
+                        'csrfmiddlewaretoken': '{{ csrf_token }}' // CSRF-токен
+                    },
+                    success: function(response) {
+                        alert(response.message); // Уведомление успешного добавления
+                    },
+                    error: function(xhr, status, error) {
+                        console.error(xhr.responseText);
+                        alert('Ошибка добавления товара в корзину.');
+                    }
+                });
+            });
+        });
+    </script>
+    <script>
+        document.getElementById('currency-select').addEventListener('change', function() {
+            const selectedCurrency = this.value; // Получаем выбранную валюту
+            const itemId = document.querySelector('input[name="item_id"]').value; // Получаем ID товара
+
+            fetch("{% url 'item_detail' item.id %}", { // Измените на URL вашего обработчика, если необходимо
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: `currency=${selectedCurrency}&item_id=${itemId}`
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Сетевая ошибка');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Обновляем цену
+                document.getElementById('price-value').innerText = data.price_item;
+
+                // Обновляем символ валюты
+                const currencySymbol = {
+                    'EUR': '€',
+                    'USD': '$',
+                    'CNY': '¥',
+                    'RUB': '₽',
+                    'AED': 'AED',
+                    'KZT': '₸'
+                };
+                document.getElementById('currency-symbol').innerText = currencySymbol[data.currency]; // Меняем символ валюты
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <title>Список товаров</title>
+    <style>
+        body {
+            background-color: #f8f9fa; /* Светлый фон */
+            margin: 20px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .item-card {
+            border: 1px solid #dee2e6; /* Рамка для товара */
+            border-radius: 0.5rem; /* Закругленные углы */
+            padding: 20px;
+            margin: 10px 0;
+            background-color: white; /* Белый фон для карточек товара */
+        }
+        .currency {
+            font-weight: bold;
+        }
+        .pagination {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Товары в наличии:</h1>
+    <div class="container">
+        <ul class="list-unstyled" id="item-list">
+            {% for item in line_items %}
+                <li class="item-card">
+                    <h2>{{ item.name }}</h2>
+                    <p>{{ item.description }}</p>
+                    <p><span class="currency">Цена:
+                        {{ item.price_item }}
+                        {% if currency == 'EUR' %}
+                            €
+                        {% elif currency == 'USD' %}
+                            $
+                        {% elif currency == 'CNY' %}
+                            ¥
+                        {% elif currency == 'RUB' %}
+                            ₽
+                        {% elif currency == 'AED' %}
+                            AED
+                        {% elif currency == 'KZT' %}
+                            ₸
+                        {% endif %}
+                    </span>
+                    </p>
+                    <!-- Поле для количества и кнопка добавления в корзину -->
+                    <input type="number" id="quantity-input-{{ item.id }}" value="1" min="1" required style="width: 60px;">
+                    <button class="btn btn-success add-to-cart" data-id="{{ item.id }}">Добавить в корзину</button>
+                    <a class="btn btn-secondary ml-2" href="{% url 'item_detail' item.id %}">Информация о товаре</a>
+                </li>
+            {% empty %}
+                <li>Нет товаров для покупки.</li>
+            {% endfor %}
+        </ul>
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1" aria-label="First">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">&laquo;&laquo;</span>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link">&laquo;</span>
+                </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+            <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+        <!-- Закрепленная кнопка "Перейти в корзину" -->
+        <div style="position: fixed; bottom: 20px; right: 20px; display: flex; align-items: center;">
+            <!-- Форма выбора валюты -->
+            <form method="POST" action="{% url 'item_list' %}" class="ml-3">
+                {% csrf_token %}
+                <select name="currency" onchange="this.form.submit()" class="form-control" style="width: auto;">
+                    <option value="USD" {% if currency == 'USD' %}selected{% endif %}>USD</option>
+                    <option value="EUR" {% if currency == 'EUR' %}selected{% endif %}>EUR</option>
+                    <option value="CNY" {% if currency == 'CNY' %}selected{% endif %}>CNY</option>
+                    <option value="RUB" {% if currency == 'RUB' %}selected{% endif %}>RUB</option>
+                    <option value="AED" {% if currency == 'AED' %}selected{% endif %}>AED</option>
+                    <option value="KZT" {% if currency == 'KZT' %}selected{% endif %}>KZT</option>
+                </select>
+            </form>
+
+            <!-- Кнопка "Перейти в корзину" -->
+            <a href="{% url 'cart' %}" class="btn btn-primary ml-2">Перейти в корзину</a>
+        </div>
+    </div>
+
+<!--     Подключение jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('.add-to-cart').on('click', function(e) {
+                e.preventDefault(); // Отменить стандартное поведение кнопки
+
+                let productId = $(this).data('id'); // Получаем ID товара
+                let quantity = $('#quantity-input-' + productId).val(); // Получаем количество
+
+                $.ajax({
+                    url: '/add_to_cart/' + productId + '/', // URL для добавления в корзину
+                    type: 'POST',
+                    data: {
+                        'quantity': quantity, // Отправляем количество
+                        'csrfmiddlewaretoken': '{{ csrf_token }}' // CSRF-токен
+                    },
+                    success: function(response) {
+                        alert(response.message); // Уведомление успешного добавления
+                    },
+                    error: function(xhr, status, error) {
+                        console.error(xhr.responseText);
+                        alert('Ошибка добавления товара в корзину.');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

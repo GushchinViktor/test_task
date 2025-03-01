@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .fixed-bottom {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: white;
+            border-top: 1px solid #ccc;
+            padding: 10px 20px;
+            z-index: 1000; /* Назначаем высокий z-index, чтобы панель оставалась сверху */
+            display: none; /* Скрываем панель по умолчанию */
+        }
+
+        .show {
+            display: flex; /* Показываем панель, когда нужно */
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Основной контейнер для корзины */
+        .cart-container {
+            padding-bottom: 70px; /* Отступ внизу для избежания наложения на фиксированную панель */
+        }
+
+        .remove-btn {
+            margin-left: 10px; /* Отступ между ценой и кнопкой удаления */
+        }
+    </style>
+    <title>Корзина</title>
+</head>
+<body>
+    <div class="container cart-container">
+        <h1 class="text-center">Ваша Корзина</h1>
+
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Наименование товара</th>
+                    <th>Количество</th>
+                    <th>Цена за шт.</th>
+                    <th>Общая сумма</th>
+                    <th>Удалить</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cart_item in line_items %}
+                    <tr>
+                        <td style="font-weight: bold;">{{ cart_item.i.item.name }}</td>
+                        <td>
+                            <!-- Поле для выбора количества товара -->
+                            <form method="POST" action="{% url 'cart' %}" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="cart_item_id" value="{{ cart_item.i.id }}">
+                                <input type="number" name="quantity" value="{{ cart_item.i.quantity }}" min="0" step="1" style="width: 60px;" onchange="this.form.submit();">
+                            </form>
+                        </td>
+                        <td>{{ cart_item.price_item }}
+                            {% if currency == 'EUR' %}
+                                €
+                            {% elif currency == 'USD' %}
+                                $
+                            {% elif currency == 'CNY' %}
+                                ¥
+                            {% elif currency == 'RUB' %}
+                                ₽
+                            {% elif currency == 'AED' %}
+                                AED
+                            {% elif currency == 'KZT' %}
+                                ₸
+                            {% endif %}
+                        </td>
+                        <td>{{ cart_item.sum_price }}
+                            {% if currency == 'EUR' %}
+                                €
+                            {% elif currency == 'USD' %}
+                                $
+                            {% elif currency == 'CNY' %}
+                                ¥
+                            {% elif currency == 'RUB' %}
+                                ₽
+                            {% elif currency == 'AED' %}
+                                AED
+                            {% elif currency == 'KZT' %}
+                                ₸
+                            {% endif %}</td>
+                    <td>
+                        <form method="POST" action="{% url 'cart' %}" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="cart_item_id" value="{{ cart_item.i.id }}">
+                            <input type="hidden" name="remove" value="true"> <!-- Добавляем эту строку для удаления -->
+                            <button type="submit" class="btn btn-danger btn-sm remove-btn">Удалить</button>
+                        </form>
+                    </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="payment-panel" id="paymentPanel">
+            <h3 class="mb-0">ИТОГО: {{ total_price }}
+            {% if currency == 'EUR' %}
+                €
+            {% elif currency == 'USD' %}
+                $
+			{% elif currency == 'CNY' %}
+                ¥
+			{% elif currency == 'RUB' %}
+                ₽
+			{% elif currency == 'AED' %}
+                AED
+			{% elif currency == 'KZT' %}
+                ₸
+            {% endif %}
+            </h3>
+
+            <div class="d-flex align-items-center">
+                <form method="POST" action="{% url 'cart' %}" class="ml-3">
+                    {% csrf_token %}
+                    <select name="currency" onchange="this.form.submit()" class="form-control">
+                        <option value="USD" {% if currency == 'USD' %}selected{% endif %}>USD</option>
+                        <option value="EUR" {% if currency == 'EUR' %}selected{% endif %}>EUR</option>
+                        <option value="CNY" {% if currency == 'CNY' %}selected{% endif %}>CNY</option>
+                        <option value="RUB" {% if currency == 'RUB' %}selected{% endif %}>RUB</option>
+                        <option value="AED" {% if currency == 'AED' %}selected{% endif %}>AED</option>
+                        <option value="KZT" {% if currency == 'KZT' %}selected{% endif %}>KZT</option>
+                    </select>
+                </form>
+                <span class="ml-2">- изменить валюту для оплаты</span>
+            </div>
+
+            <div class="d-flex justify-content-between mt-3">
+                <form method="GET" action="{% url 'item_list' %}" class="mr-2">
+                    <button type="submit" class="btn btn-secondary">Вернуться к покупкам</button>
+                </form>
+                <form method="POST" action="{% url 'checkout' %}" class="text-right">
+                    {% csrf_token %}
+                    <input type="hidden" name="currency" value="{{ currency }}">
+                    <button type="submit" class="btn btn-primary">Оплатить товары</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
+

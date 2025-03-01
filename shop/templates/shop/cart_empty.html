@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <title>Оплата не выполнена</title>
+    <style>
+        body {
+            background-color: #f8f9fa; /* Светлый фон */
+            margin: 20px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .message {
+            background-color: white; /* Белый фон для блока с сообщением */
+            border: 1px solid #dee2e6; /* Рамка */
+            border-radius: 0.5rem; /* Закругленные углы */
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Легкая тень */
+            text-align: center; /* Центрируем текст внутри блока */
+        }
+        .btn-back {
+            margin-top: 20px; /* Отступ сверху для кнопки */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="message">
+            <h1>Ваша корзина пуста</h1>
+            <a href="{% url 'item_list' %}" class="btn btn-primary btn-back">Вернуться к покупкам</a>  <!-- Кнопка для возврата на главную страницу магазина -->
+        </div>
+    </div>
+</body>
+</html>
