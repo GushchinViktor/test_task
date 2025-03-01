@@ -3,3 +3,4 @@ venv
 .vs
 __pycache__
 .env
+.idea/
